@@ -1,0 +1,25 @@
+/* Imported fonts */
+/* Montserrat medium 500 from google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+
+
+
+#searchArea {
+    margin : 5% auto 0 auto;
+    text-align : center;
+}
+
+#searchAreaText {
+    font-family:  'Montserrat', sans-serif;
+}
+
+#searchBox {
+    width : 55vw;
+    border-radius : 15px;
+    padding : 12px;
+    border : 3px solid #f0f0f0;
+}
+
+.searchBoxFocus {
+    border :  3px solid #f0f0f0;
+}
