@@ -21,9 +21,21 @@ function debounce(fetcherFn, timer = 2000){
 }
 
 
+
+
+
+
+
 let debouncedFetcher = debounce(fetchTitles);
 
 searchField.addEventListener("input", e => debouncedFetcher(e.target.value));
+
+
+
+
+
+
+
 
 
 // You could potentially break this code down to smaller functions,but I dont want to be chasing functions around.
@@ -78,12 +90,24 @@ function fetchTitles(value){
         
         // Append all titles to DOM after full construction
         searchResultInDom.appendChild(fragment);
+
+        // Highlight search terms
+        textHighlighting(searchTerm, searchResultInDom);
     })
     .catch(err => {
         throw new Error("Error: " + err.message);
     })
    
 }
+
+
+
+
+
+
+
+
+
 
 async function myFetch(url){
         const response = await fetch(url)
@@ -95,31 +119,20 @@ async function myFetch(url){
 }
 
 
-function textMatching(){
-        // the regex logic
-        let regex = new RegExp(searchTerm, "gi");
 
-        // find all instances of the searchTerm in title and snippet
-        let currentDomContent = searchResultInDom.textContent;
 
-        let regexMatchInDom = currentDomContent.macth(regex);
 
-        if(regexMatchInDom){
 
-            regexMatchInDom.forEach(match => {
-                    // create a text node and style it
-                    let textNode = document.createTextNode(match);
-                    // create a span to be able to add som style
 
-                    let span = document.createElement("span");
 
-                    span.textContent = textNode;
 
-                    span.style.backgroundColor = "#fff6ea";
+function textHighlighting(searchTerm, searchResultInDom){
 
-                    let regexForThisMatch = new RegExp(match, "gi");
+        let re = new RegExp(searchTerm, "gi");
 
-                    currentDomContent.replace(regexForThisMatch, span);
-            })
-        }
+        let currentDomContent = searchResultInDom.innerHTML;
+
+        let newDomContent = currentDomContent.replace(re, `<span style="background-color: #fff6ea; padding: 5px">${searchTerm}</span>`);
+
+        searchResultInDom.innerHTML = newDomContent;    
 }
