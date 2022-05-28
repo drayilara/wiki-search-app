@@ -1,56 +1,88 @@
 // url : https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=value&format=json
 
+// <a href="https://en.wikipedia.org/?curid=${result.pageid}">
+
 // add listener to search field
 
 const searchField = document.getElementById("searchBox");
 
+// Implement a debounce function.
 
-searchField.addEventListener("input", fetchTitles);
+function debounce(fetcherFn, timer = 2000){
+        
+        let timeOutId;
 
-function fetchTitles(evt){
+        return function(...args){
+           clearTimeout(timeOutId);
+           timeOutId = setTimeout(() => {
+               fetcherFn(...args);
+           }, timer);
+        }
+}
+
+
+let debouncedFetcher = debounce(fetchTitles);
+
+searchField.addEventListener("input", e => debouncedFetcher(e.target.value));
+
+
+// You could potentially break this code down to smaller functions,but I dont want to be chasing functions around.
+
+function fetchTitles(value){
     // go fetch the requested title
 
-    let searchTerm = evt.target.value;
+    let searchResultInDom = document.getElementById("searchResults");
 
-    console.log(evt);
+    let fragment = new DocumentFragment();
+    
+    /* critical condition.Hot reload for DOM.Ensures the DOM is not continously populated with titles without being removed.
+    On "input", it checks if the DOM currently has contents,if so,it removes them,and on going down in this fn,it adds fresh relevant content.
+    */
+    if(searchResultInDom.innerHTML) searchResultInDom.innerHTML = "";
 
-    let url = `https://en.wikipedia.org/w/api.php?action=query&list=search&prop=info|extracts&inprop=url&utf8=&format=json&origin=*&srlimit=10&srsearch=${searchTerm}`;
+    let searchTerm = value;
+
+
+    let url = `https://en.wikipedia.org/w/api.php?action=query&list=search&prop=info|extracts&inprop=url&format=json&generator=links&origin=*&srlimit=10&srsearch=${searchTerm}`;
 
     let promise = myFetch(url);
 
+
     promise.then(data => {
-            //create fragment
-
-            const fragment = new DocumentFragment();
-
-            // get the fields needed
+            // get the fields needed.By default we have ten documents back(as specified in the url).
             let arrayOfResults = data.query.search;
+            return arrayOfResults;
+    })
+    .then(results => {
 
-            arrayOfResults.forEach(result => {
-
-                // create html to render
-                let h3 = document.createElement("h3");
-                let p = document.createElement("p");
-
-                h3.textContent = result.title;
-                p.innerHTML = result.snippet;
-
-                const newNodes = [h3, p];
-
-                fragment.append(...newNodes);
-            })
-
-            document.body.appendChild(fragment);
+        results.forEach(result => {
+            let title = document.createElement("h3");
+            let snippet = document.createElement("p");
+            let link = document.createElement("a");
 
 
+            // construct the url for title
+            link.setAttribute("href", `https://en.wikipedia.org/?curid=${result.pageid}`);
+            link.textContent = result.title;
+            
+            // Bury the link in the h3 for hero formating.
+            title.appendChild(link);
+
+            snippet.innerHTML = result.snippet;  //the snippet has a span tag inside, and I want it formatted properly
+
+            let appendToFragment = new Array(title, snippet);
+
+            // append newly formated titles to a cold, lite DOM.
+            fragment.append(...appendToFragment);
+        })
+        
+        // Append all titles to DOM after full construction
+        searchResultInDom.appendChild(fragment);
     })
     .catch(err => {
         throw new Error("Error: " + err.message);
     })
-
-
-
-    
+   
 }
 
 async function myFetch(url){
@@ -63,37 +95,31 @@ async function myFetch(url){
 }
 
 
+function textMatching(){
+        // the regex logic
+        let regex = new RegExp(searchTerm, "gi");
 
+        // find all instances of the searchTerm in title and snippet
+        let currentDomContent = searchResultInDom.textContent;
 
+        let regexMatchInDom = currentDomContent.macth(regex);
 
+        if(regexMatchInDom){
 
+            regexMatchInDom.forEach(match => {
+                    // create a text node and style it
+                    let textNode = document.createTextNode(match);
+                    // create a span to be able to add som style
 
+                    let span = document.createElement("span");
 
+                    span.textContent = textNode;
 
+                    span.style.backgroundColor = "#fff6ea";
 
+                    let regexForThisMatch = new RegExp(match, "gi");
 
-
-
-
-
-
-
-// let counter = 0;
-
-// function debounce(fn, delay){
-//    let timer;
-//    return function(){
-//    clearTimeout(timer);
-//    timer = setTimeout(() => {
-//            fn();
-//        }, delay);
-//    }
-// }
-
-// function logger(){
-//     console.log(++counter);
-// }
-
-// logger = debounce(logger, 1000)
-
-// addEventListener("scroll",logger)
+                    currentDomContent.replace(regexForThisMatch, span);
+            })
+        }
+}
